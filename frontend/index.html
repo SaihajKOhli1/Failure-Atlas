@@ -807,43 +807,8 @@
       <aside class="sidebar-right">
         <div class="panel">
           <div class="panel-header">Top Root Causes</div>
-          <div class="panel-body">
-            <div class="kpi-item">
-              <div class="kpi-header">
-                <div class="kpi-label">Distribution mismatch</div>
-                <div class="kpi-value">72%</div>
-              </div>
-              <div class="progress-bar">
-                <div class="progress-fill" style="width: 72%"></div>
-              </div>
-            </div>
-            <div class="kpi-item">
-              <div class="kpi-header">
-                <div class="kpi-label">Trust & privacy</div>
-                <div class="kpi-value">58%</div>
-              </div>
-              <div class="progress-bar">
-                <div class="progress-fill" style="width: 58%"></div>
-              </div>
-            </div>
-            <div class="kpi-item">
-              <div class="kpi-header">
-                <div class="kpi-label">Infra / reliability</div>
-                <div class="kpi-value">44%</div>
-              </div>
-              <div class="progress-bar">
-                <div class="progress-fill" style="width: 44%"></div>
-              </div>
-            </div>
-            <div class="kpi-item">
-              <div class="kpi-header">
-                <div class="kpi-label">Pricing / value</div>
-                <div class="kpi-value">39%</div>
-              </div>
-              <div class="progress-bar">
-                <div class="progress-fill" style="width: 39%"></div>
-              </div>
-            </div>
+          <div class="panel-body" id="kpiContainer">
+            <!-- KPI items will be dynamically inserted here -->
           </div>
         </div>
 
@@ -927,86 +892,13 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const POSTS = [
-      {
-        id: 1,
-        votes: 842,
-        title: "Quibi: premium content… with the wrong distribution",
-        product: "Quibi",
-        year: 2020,
-        category: "media / mobile",
-        cause: "distribution",
-        severity: "high",
-        tags: ["distribution", "strategy", "timing"],
-        summary: "Quibi launched with high production value but weak sharing/virality mechanics and unclear differentiation vs. YouTube/TikTok. Timing during a lockdown also reduced commuter use-cases. Lesson: bake distribution into the product, not the marketing."
-      },
-      {
-        id: 2,
-        votes: 615,
-        title: "Google Glass: the trust gap was bigger than the tech gap",
-        product: "Google Glass",
-        year: 2013,
-        category: "consumer hardware",
-        cause: "trust",
-        severity: "high",
-        tags: ["trust", "ux", "timing"],
-        summary: "The product triggered privacy fears ('being recorded') and social discomfort, with unclear mainstream value. Lesson: solve the social contract first (signals, consent, norms), then scale the tech."
-      },
-      {
-        id: 3,
-        votes: 402,
-        title: "SaaS outage: a rollout without guardrails",
-        product: "ExampleCo",
-        year: 2024,
-        category: "B2B SaaS",
-        cause: "infra",
-        severity: "med",
-        tags: ["infra", "rollout", "alerts"],
-        summary: "A deploy changed a query pattern, spiking DB load. No feature flag fallback, weak alerting, and no canary. Lesson: progressive delivery + kill-switches + DB safety (indexes, limits, timeouts)."
-      },
-      {
-        id: 4,
-        votes: 318,
-        title: "Pricing mismatch: users loved it… until they paid",
-        product: "StartupX",
-        year: 2022,
-        category: "productivity",
-        cause: "pricing",
-        severity: "med",
-        tags: ["pricing", "strategy"],
-        summary: "Product adoption was strong but conversion collapsed because value wasn't obvious at the paywall. Lesson: price around a clear moment of value, show outcomes, and avoid surprise tiers."
-      },
-      {
-        id: 5,
-        votes: 256,
-        title: "Feature flop: built for power users, launched for everyone",
-        product: "ToolCo",
-        year: 2023,
-        category: "productivity",
-        cause: "ux",
-        severity: "low",
-        tags: ["ux", "strategy"],
-        summary: "Complex interface delighted early adopters but confused mainstream users. No onboarding, feature discovery was buried. Lesson: match UI complexity to user sophistication, or invest heavily in progressive disclosure."
-      },
-      {
-        id: 6,
-        votes: 189,
-        title: "Market timing miss: launched when everyone was distracted",
-        product: "SocialApp",
-        year: 2020,
-        category: "social",
-        cause: "timing",
-        severity: "med",
-        tags: ["timing", "strategy"],
-        summary: "Launch coincided with a major news cycle that dominated attention. Press push vanished, early users churned. Lesson: check the calendar, monitor news cycles, have a backup launch plan."
-      }
-    ];
+    const API_BASE_URL = "http://localhost:8000";
 
-    let allPosts = [...POSTS];
     let activeCause = "all";
     let activeSeverity = "all";
     let activeSort = "hot";
     let searchQuery = "";
+    let searchTimeout = null;
 
     const feedEl = document.getElementById("feed");
     const feedStatsEl = document.getElementById("feedStats");
@@ -1023,74 +915,12 @@
     const cancelBtn = document.getElementById("cancelBtn");
     const submitBtn = document.getElementById("submitBtn");
     const toast = document.getElementById("toast");
+    const kpiContainer = document.getElementById("kpiContainer");
 
     function showToast(message) {
       toast.textContent = message;
       toast.classList.add("show");
       setTimeout(() => toast.classList.remove("show"), 2000);
-    }
-
-    function renderFeed() {
-      let filtered = [...allPosts];
-
-      if (activeCause !== "all") {
-        filtered = filtered.filter(p => p.cause === activeCause || p.tags.includes(activeCause));
-      }
-
-      if (activeSeverity !== "all") {
-        filtered = filtered.filter(p => p.severity === activeSeverity);
-      }
-
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        filtered = filtered.filter(p =>
-          (p.title + " " + p.product + " " + p.category + " " + p.cause + " " + p.summary + " " + p.tags.join(" "))
-            .toLowerCase().includes(q)
-        );
-      }
-
-      if (activeSort === "new") {
-        filtered.sort((a, b) => b.year - a.year);
-      } else if (activeSort === "top") {
-        filtered.sort((a, b) => b.votes - a.votes);
-      } else {
-        filtered.sort((a, b) => (b.votes + (b.year - 2010) * 6) - (a.votes + (a.year - 2010) * 6));
-      }
-
-      feedStatsEl.textContent = `Showing ${filtered.length} post${filtered.length !== 1 ? "s" : ""}`;
-
-      feedEl.innerHTML = filtered.map(post => `
-        <article class="post">
-          <div class="vote-section">
-            <button class="vote-btn" title="Upvote">▲</button>
-            <div class="vote-score">${post.votes.toLocaleString()}</div>
-            <button class="vote-btn down" title="Downvote">▼</button>
-          </div>
-          <div class="post-content">
-            <h2>${escapeHtml(post.title)}</h2>
-            <div class="post-meta">
-              <span class="badge badge-cause">🏷 ${post.cause}</span>
-              <span class="badge badge-severity ${post.severity}">${post.severity.toUpperCase()}</span>
-              <span>•</span>
-              <span><strong>${escapeHtml(post.product)}</strong></span>
-              <span>•</span>
-              <span>${escapeHtml(post.category)}</span>
-              <span>•</span>
-              <span>${post.year}</span>
-              ${post.tags.slice(0, 3).map(tag => `<span class="hashtag">#${tag}</span>`).join("")}
-            </div>
-            <div class="post-summary">${escapeHtml(post.summary)}</div>
-            <div class="post-footer">
-              <div class="post-actions">
-                <span class="action-link">💬 Discuss</span>
-                <span class="action-link">🧠 Lesson</span>
-                <span class="action-link">🔗 Source</span>
-                <span class="action-link">📌 Save</span>
-              </div>
-            </div>
-          </div>
-        </article>
-      `).join("");
     }
 
     function escapeHtml(text) {
@@ -1099,28 +929,145 @@
       return div.innerHTML;
     }
 
+    function formatCauseLabel(cause) {
+      const mappings = {
+        "distribution": "Distribution mismatch",
+        "trust": "Trust & privacy",
+        "infra": "Infra / reliability",
+        "pricing": "Pricing / value",
+        "ux": "UX / usability",
+        "timing": "Timing / market",
+        "strategy": "Strategy / positioning"
+      };
+      return mappings[cause] || cause.charAt(0).toUpperCase() + cause.slice(1);
+    }
+
+    async function fetchPosts() {
+      try {
+        feedEl.innerHTML = '<div style="padding: 32px; text-align: center; color: var(--muted);">Loading…</div>';
+        
+        const params = new URLSearchParams();
+        if (searchQuery.trim()) params.append("q", searchQuery.trim());
+        if (activeCause !== "all") params.append("cause", activeCause);
+        if (activeSeverity !== "all") params.append("severity", activeSeverity);
+        params.append("sort", activeSort);
+
+        const response = await fetch(`${API_BASE_URL}/posts?${params.toString()}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.items.length === 0) {
+          feedEl.innerHTML = '<div style="padding: 32px; text-align: center; color: var(--muted);">No posts found.</div>';
+          feedStatsEl.textContent = "Showing 0 posts";
+          return;
+        }
+
+        feedStatsEl.textContent = `Showing ${data.total} post${data.total !== 1 ? "s" : ""}`;
+
+        feedEl.innerHTML = data.items.map(post => `
+          <article class="post">
+            <div class="vote-section">
+              <button class="vote-btn" title="Upvote">▲</button>
+              <div class="vote-score">${post.votes.toLocaleString()}</div>
+              <button class="vote-btn down" title="Downvote">▼</button>
+            </div>
+            <div class="post-content">
+              <h2>${escapeHtml(post.title)}</h2>
+              <div class="post-meta">
+                <span class="badge badge-cause">🏷 ${escapeHtml(post.cause)}</span>
+                <span class="badge badge-severity ${post.severity}">${post.severity.toUpperCase()}</span>
+                <span>•</span>
+                <span><strong>${escapeHtml(post.product)}</strong></span>
+                <span>•</span>
+                <span>${escapeHtml(post.category)}</span>
+                <span>•</span>
+                <span>${post.year}</span>
+                ${(post.tags || []).slice(0, 3).map(tag => `<span class="hashtag">#${escapeHtml(tag)}</span>`).join("")}
+              </div>
+              <div class="post-summary">${escapeHtml(post.summary)}</div>
+              <div class="post-footer">
+                <div class="post-actions">
+                  <span class="action-link">💬 Discuss</span>
+                  <span class="action-link">🧠 Lesson</span>
+                  <span class="action-link">🔗 Source</span>
+                  <span class="action-link">📌 Save</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        `).join("");
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+        feedEl.innerHTML = '<div style="padding: 32px; text-align: center; color: var(--danger);">Failed to load posts</div>';
+        showToast("Failed to load posts");
+      }
+    }
+
+    async function fetchAnalytics() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/analytics/top-causes`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.items.length === 0) {
+          kpiContainer.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--muted); font-size: 12px;">No analytics data available</div>';
+          return;
+        }
+
+        kpiContainer.innerHTML = data.items.map(item => `
+          <div class="kpi-item">
+            <div class="kpi-header">
+              <div class="kpi-label">${escapeHtml(formatCauseLabel(item.cause))}</div>
+              <div class="kpi-value">${item.percent}%</div>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${item.percent}%"></div>
+            </div>
+          </div>
+        `).join("");
+      } catch (error) {
+        console.error("Error fetching analytics:", error);
+        kpiContainer.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--muted); font-size: 12px;">Failed to load analytics</div>';
+      }
+    }
+
     chipGroup.addEventListener("click", (e) => {
       const chip = e.target.closest(".chip");
       if (!chip) return;
       chipGroup.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
       chip.classList.add("active");
       activeCause = chip.dataset.cause;
-      renderFeed();
+      fetchPosts();
     });
 
     sortSelect.addEventListener("change", (e) => {
       activeSort = e.target.value;
-      renderFeed();
+      fetchPosts();
     });
 
     severitySelect.addEventListener("change", (e) => {
       activeSeverity = e.target.value;
-      renderFeed();
+      fetchPosts();
     });
 
     searchInput.addEventListener("input", (e) => {
       searchQuery = e.target.value;
-      renderFeed();
+      
+      // Debounce search (200ms)
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+      searchTimeout = setTimeout(() => {
+        fetchPosts();
+      }, 200);
     });
 
     themeToggle.addEventListener("click", () => {
@@ -1157,32 +1104,50 @@
       if (e.target === modalBackdrop) closeModalFunc();
     });
 
-    submitBtn.addEventListener("click", () => {
-      const title = document.getElementById("titleInput").value.trim() || "Untitled failure";
-      const product = document.getElementById("productInput").value.trim() || "Unknown";
-      const year = parseInt(document.getElementById("yearInput").value.trim() || "2025", 10);
-      const category = document.getElementById("categoryInput").value.trim() || "general";
-      const cause = document.getElementById("causeInput").value.trim().toLowerCase() || "strategy";
+    submitBtn.addEventListener("click", async () => {
+      const title = document.getElementById("titleInput").value.trim();
+      const product = document.getElementById("productInput").value.trim();
+      const year = parseInt(document.getElementById("yearInput").value.trim(), 10);
+      const category = document.getElementById("categoryInput").value.trim();
+      const cause = document.getElementById("causeInput").value.trim().toLowerCase();
       const severity = document.getElementById("severityInput").value;
-      const summary = document.getElementById("summaryInput").value.trim() || "Add details about what happened, impact, fix, and lesson.";
+      const summary = document.getElementById("summaryInput").value.trim();
 
-      const newPost = {
-        id: Date.now(),
-        votes: Math.floor(80 + Math.random() * 350),
-        title,
-        product,
-        year,
-        category,
-        cause,
-        severity,
-        tags: [cause].slice(0, 1),
-        summary
-      };
+      if (!title || !product || !year || !category || !cause || !severity || !summary) {
+        showToast("Please fill in all fields");
+        return;
+      }
 
-      allPosts.unshift(newPost);
-      closeModalFunc();
-      showToast("Posted ✓");
-      renderFeed();
+      try {
+        const response = await fetch(`${API_BASE_URL}/posts`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            title,
+            product,
+            year,
+            category,
+            cause,
+            severity,
+            summary
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        }
+
+        closeModalFunc();
+        showToast("Posted ✓");
+        await fetchPosts();
+        await fetchAnalytics();
+      } catch (error) {
+        console.error("Error creating post:", error);
+        showToast(error.message || "Failed to create post");
+      }
     });
 
     window.addEventListener("keydown", (e) => {
@@ -1195,7 +1160,9 @@
       }
     });
 
-    renderFeed();
+    // Initialize on page load
+    fetchPosts();
+    fetchAnalytics();
   </script>
 </body>
 </html>
