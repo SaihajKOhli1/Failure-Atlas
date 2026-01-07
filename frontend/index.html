@@ -1,0 +1,1202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Failure Atlas</title>
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --panel: #131823;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --accent-from: #4285f4;
+      --accent-to: #9c27b0;
+      --success: #34a853;
+      --warning: #fbbc04;
+      --danger: #ea4335;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      --radius: 16px;
+      --radius-sm: 12px;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    [data-theme="light"] {
+      --bg: #f8f9fa;
+      --panel: #ffffff;
+      --border: rgba(0, 0, 0, 0.1);
+      --text: #202124;
+      --muted: #5f6368;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(circle at 20% 30%, rgba(66, 133, 244, 0.15), transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(156, 39, 176, 0.12), transparent 50%);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      outline: none;
+    }
+
+    input, select, textarea {
+      font-family: inherit;
+      outline: none;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(19, 24, 35, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+
+    [data-theme="light"] .topbar {
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 18px;
+      white-space: nowrap;
+    }
+
+    .logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent-from), var(--accent-to));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 900;
+    }
+
+    .tagline {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .search-box {
+      flex: 1;
+      max-width: 600px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 10px 16px;
+      padding-left: 40px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    [data-theme="light"] .search-box input {
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    .search-box::before {
+      content: "🔍";
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 16px;
+      opacity: 0.7;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text);
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    [data-theme="light"] .btn {
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--accent-from);
+      transform: translateY(-1px);
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, var(--accent-from), var(--accent-to));
+      border-color: transparent;
+      color: white;
+    }
+
+    .btn.primary:hover {
+      opacity: 0.9;
+    }
+
+    .btn.icon {
+      width: 40px;
+      padding: 0;
+      justify-content: center;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 240px 1fr 300px;
+      gap: 16px;
+      padding: 16px 0;
+    }
+
+    @media (max-width: 1200px) {
+      .layout {
+        grid-template-columns: 240px 1fr;
+      }
+      .sidebar-right {
+        display: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .sidebar-left {
+        display: none;
+      }
+      .topbar-inner {
+        flex-wrap: wrap;
+      }
+      .search-box {
+        order: 3;
+        width: 100%;
+        max-width: none;
+      }
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    .nav-list {
+      list-style: none;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 4px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(90deg, rgba(66, 133, 244, 0.15), transparent);
+      border-left: 3px solid var(--accent-from);
+    }
+
+    .nav-badge {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--muted);
+    }
+
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chip:hover {
+      border-color: var(--accent-from);
+      transform: translateY(-1px);
+    }
+
+    .chip.active {
+      background: linear-gradient(135deg, var(--accent-from), var(--accent-to));
+      border-color: transparent;
+      color: white;
+    }
+
+    .feed-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .feed-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    select {
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    [data-theme="light"] select {
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    .feed-stats {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .feed {
+      padding: 16px;
+    }
+
+    .post {
+      display: grid;
+      grid-template-columns: 60px 1fr;
+      gap: 16px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      transition: all 0.2s;
+    }
+
+    .post:hover {
+      border-color: var(--accent-from);
+      background: rgba(255, 255, 255, 0.04);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    .vote-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vote-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: all 0.2s;
+    }
+
+    .vote-btn:hover {
+      background: rgba(52, 168, 83, 0.15);
+      border-color: var(--success);
+    }
+
+    .vote-btn.down:hover {
+      background: rgba(234, 67, 53, 0.15);
+      border-color: var(--danger);
+    }
+
+    .vote-score {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .post-content h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .post-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-cause {
+      background: rgba(66, 133, 244, 0.15);
+      color: var(--accent-from);
+      border: 1px solid rgba(66, 133, 244, 0.3);
+    }
+
+    .badge-severity.low {
+      background: rgba(52, 168, 83, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(52, 168, 83, 0.3);
+    }
+
+    .badge-severity.med {
+      background: rgba(251, 188, 4, 0.15);
+      color: var(--warning);
+      border: 1px solid rgba(251, 188, 4, 0.3);
+    }
+
+    .badge-severity.high {
+      background: rgba(234, 67, 53, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(234, 67, 53, 0.3);
+    }
+
+    .hashtag {
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .post-summary {
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .post-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .post-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .action-link {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .action-link:hover {
+      color: var(--accent-from);
+    }
+
+    .kpi-item {
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    .kpi-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .kpi-value {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent-from);
+    }
+
+    .progress-bar {
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-from), var(--accent-to));
+      border-radius: 999px;
+    }
+
+    .cta-box {
+      padding: 16px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, rgba(66, 133, 244, 0.1), rgba(156, 39, 176, 0.1));
+      border: 1px solid var(--border);
+    }
+
+    .cta-box p {
+      font-size: 13px;
+      margin-bottom: 12px;
+      color: var(--muted);
+    }
+
+    .challenge-box {
+      padding: 16px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+    }
+
+    .challenge-box strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .challenge-box .chip {
+      margin-top: 8px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: rgba(234, 67, 53, 0.15);
+      border-color: var(--danger);
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    [data-theme="light"] .form-group input,
+    [data-theme="light"] .form-group textarea,
+    [data-theme="light"] .form-group select {
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .modal-footer {
+      padding: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 12px 20px;
+      font-weight: 600;
+      font-size: 14px;
+      box-shadow: var(--shadow);
+      z-index: 2000;
+      display: none;
+    }
+
+    .toast.show {
+      display: block;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateX(-50%) translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="topbar">
+    <div class="container">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="logo">FA</div>
+          <div>
+            Failure Atlas
+            <div class="tagline">Learn from what broke</div>
+          </div>
+        </div>
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Search failures, causes, products…" />
+        </div>
+        <div class="actions">
+          <button class="btn icon" id="themeToggle">🌙</button>
+          <button class="btn" id="savedBtn">🔖 Saved</button>
+          <button class="btn primary" id="newPostBtn">➕ New Failure</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="layout">
+      <aside class="sidebar-left">
+        <div class="panel">
+          <div class="panel-header">Explore</div>
+          <div class="panel-body">
+            <ul class="nav-list">
+              <li class="nav-item active">
+                <span>🏠 Home Feed</span>
+                <span class="nav-badge">hot</span>
+              </li>
+              <li class="nav-item">
+                <span>🧯 Postmortems</span>
+                <span class="nav-badge">new</span>
+              </li>
+              <li class="nav-item">
+                <span>🧪 Experiments</span>
+                <span class="nav-badge">lab</span>
+              </li>
+              <li class="nav-item">
+                <span>📈 Patterns</span>
+                <span class="nav-badge">insights</span>
+              </li>
+              <li class="nav-item">
+                <span>🧠 Lessons</span>
+                <span class="nav-badge">playbook</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Filter by Root Cause</div>
+          <div class="panel-body">
+            <div class="chip-group" id="chipGroup">
+              <div class="chip active" data-cause="all">All</div>
+              <div class="chip" data-cause="pricing">Pricing</div>
+              <div class="chip" data-cause="ux">UX</div>
+              <div class="chip" data-cause="timing">Timing</div>
+              <div class="chip" data-cause="infra">Infra</div>
+              <div class="chip" data-cause="trust">Trust</div>
+              <div class="chip" data-cause="distribution">Distribution</div>
+              <div class="chip" data-cause="strategy">Strategy</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main>
+        <div class="panel">
+          <div class="feed-toolbar">
+            <div class="feed-controls">
+              <select id="sortSelect">
+                <option value="hot">🔥 Hot</option>
+                <option value="new">🆕 New</option>
+                <option value="top">🏆 Top</option>
+              </select>
+              <select id="severitySelect">
+                <option value="all">All severities</option>
+                <option value="low">Low</option>
+                <option value="med">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div class="feed-stats" id="feedStats">Showing 0 posts</div>
+          </div>
+          <div class="feed" id="feed"></div>
+        </div>
+      </main>
+
+      <aside class="sidebar-right">
+        <div class="panel">
+          <div class="panel-header">Top Root Causes</div>
+          <div class="panel-body">
+            <div class="kpi-item">
+              <div class="kpi-header">
+                <div class="kpi-label">Distribution mismatch</div>
+                <div class="kpi-value">72%</div>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 72%"></div>
+              </div>
+            </div>
+            <div class="kpi-item">
+              <div class="kpi-header">
+                <div class="kpi-label">Trust & privacy</div>
+                <div class="kpi-value">58%</div>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 58%"></div>
+              </div>
+            </div>
+            <div class="kpi-item">
+              <div class="kpi-header">
+                <div class="kpi-label">Infra / reliability</div>
+                <div class="kpi-value">44%</div>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 44%"></div>
+              </div>
+            </div>
+            <div class="kpi-item">
+              <div class="kpi-header">
+                <div class="kpi-label">Pricing / value</div>
+                <div class="kpi-value">39%</div>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 39%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Submit a Failure</div>
+          <div class="panel-body">
+            <div class="cta-box">
+              <p>Drop a quick postmortem. You can refine later — the goal is collecting patterns.</p>
+              <button class="btn primary" id="newPostBtn2" style="width: 100%">➕ Create Post</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top: 16px;">
+          <div class="panel-header">Daily Challenge</div>
+          <div class="panel-body">
+            <div class="challenge-box">
+              <strong>Write a postmortem for:</strong>
+              <div>"A feature rollout that broke trust"</div>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 8px;">Think: bad defaults, confusing consent, unclear messaging.</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>New Failure Post</h2>
+        <button class="modal-close" id="closeModal">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Title</label>
+            <input type="text" id="titleInput" placeholder="e.g., Google Glass: privacy + unclear value" />
+          </div>
+          <div class="form-group">
+            <label>Product / Company</label>
+            <input type="text" id="productInput" placeholder="e.g., Google Glass" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Year</label>
+            <input type="number" id="yearInput" placeholder="e.g., 2013" />
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <input type="text" id="categoryInput" placeholder="e.g., consumer hardware, fintech" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Root Cause</label>
+            <input type="text" id="causeInput" placeholder="e.g., trust/privacy, pricing, timing, infra" />
+          </div>
+          <div class="form-group">
+            <label>Severity</label>
+            <select id="severityInput">
+              <option value="low">Low</option>
+              <option value="med" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Summary</label>
+          <textarea id="summaryInput" placeholder="What happened + impact + what you'd do differently…"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="cancelBtn">Cancel</button>
+        <button class="btn primary" id="submitBtn">Post</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const POSTS = [
+      {
+        id: 1,
+        votes: 842,
+        title: "Quibi: premium content… with the wrong distribution",
+        product: "Quibi",
+        year: 2020,
+        category: "media / mobile",
+        cause: "distribution",
+        severity: "high",
+        tags: ["distribution", "strategy", "timing"],
+        summary: "Quibi launched with high production value but weak sharing/virality mechanics and unclear differentiation vs. YouTube/TikTok. Timing during a lockdown also reduced commuter use-cases. Lesson: bake distribution into the product, not the marketing."
+      },
+      {
+        id: 2,
+        votes: 615,
+        title: "Google Glass: the trust gap was bigger than the tech gap",
+        product: "Google Glass",
+        year: 2013,
+        category: "consumer hardware",
+        cause: "trust",
+        severity: "high",
+        tags: ["trust", "ux", "timing"],
+        summary: "The product triggered privacy fears ('being recorded') and social discomfort, with unclear mainstream value. Lesson: solve the social contract first (signals, consent, norms), then scale the tech."
+      },
+      {
+        id: 3,
+        votes: 402,
+        title: "SaaS outage: a rollout without guardrails",
+        product: "ExampleCo",
+        year: 2024,
+        category: "B2B SaaS",
+        cause: "infra",
+        severity: "med",
+        tags: ["infra", "rollout", "alerts"],
+        summary: "A deploy changed a query pattern, spiking DB load. No feature flag fallback, weak alerting, and no canary. Lesson: progressive delivery + kill-switches + DB safety (indexes, limits, timeouts)."
+      },
+      {
+        id: 4,
+        votes: 318,
+        title: "Pricing mismatch: users loved it… until they paid",
+        product: "StartupX",
+        year: 2022,
+        category: "productivity",
+        cause: "pricing",
+        severity: "med",
+        tags: ["pricing", "strategy"],
+        summary: "Product adoption was strong but conversion collapsed because value wasn't obvious at the paywall. Lesson: price around a clear moment of value, show outcomes, and avoid surprise tiers."
+      },
+      {
+        id: 5,
+        votes: 256,
+        title: "Feature flop: built for power users, launched for everyone",
+        product: "ToolCo",
+        year: 2023,
+        category: "productivity",
+        cause: "ux",
+        severity: "low",
+        tags: ["ux", "strategy"],
+        summary: "Complex interface delighted early adopters but confused mainstream users. No onboarding, feature discovery was buried. Lesson: match UI complexity to user sophistication, or invest heavily in progressive disclosure."
+      },
+      {
+        id: 6,
+        votes: 189,
+        title: "Market timing miss: launched when everyone was distracted",
+        product: "SocialApp",
+        year: 2020,
+        category: "social",
+        cause: "timing",
+        severity: "med",
+        tags: ["timing", "strategy"],
+        summary: "Launch coincided with a major news cycle that dominated attention. Press push vanished, early users churned. Lesson: check the calendar, monitor news cycles, have a backup launch plan."
+      }
+    ];
+
+    let allPosts = [...POSTS];
+    let activeCause = "all";
+    let activeSeverity = "all";
+    let activeSort = "hot";
+    let searchQuery = "";
+
+    const feedEl = document.getElementById("feed");
+    const feedStatsEl = document.getElementById("feedStats");
+    const searchInput = document.getElementById("searchInput");
+    const sortSelect = document.getElementById("sortSelect");
+    const severitySelect = document.getElementById("severitySelect");
+    const chipGroup = document.getElementById("chipGroup");
+    const themeToggle = document.getElementById("themeToggle");
+    const savedBtn = document.getElementById("savedBtn");
+    const newPostBtn = document.getElementById("newPostBtn");
+    const newPostBtn2 = document.getElementById("newPostBtn2");
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const closeModal = document.getElementById("closeModal");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const submitBtn = document.getElementById("submitBtn");
+    const toast = document.getElementById("toast");
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2000);
+    }
+
+    function renderFeed() {
+      let filtered = [...allPosts];
+
+      if (activeCause !== "all") {
+        filtered = filtered.filter(p => p.cause === activeCause || p.tags.includes(activeCause));
+      }
+
+      if (activeSeverity !== "all") {
+        filtered = filtered.filter(p => p.severity === activeSeverity);
+      }
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        filtered = filtered.filter(p =>
+          (p.title + " " + p.product + " " + p.category + " " + p.cause + " " + p.summary + " " + p.tags.join(" "))
+            .toLowerCase().includes(q)
+        );
+      }
+
+      if (activeSort === "new") {
+        filtered.sort((a, b) => b.year - a.year);
+      } else if (activeSort === "top") {
+        filtered.sort((a, b) => b.votes - a.votes);
+      } else {
+        filtered.sort((a, b) => (b.votes + (b.year - 2010) * 6) - (a.votes + (a.year - 2010) * 6));
+      }
+
+      feedStatsEl.textContent = `Showing ${filtered.length} post${filtered.length !== 1 ? "s" : ""}`;
+
+      feedEl.innerHTML = filtered.map(post => `
+        <article class="post">
+          <div class="vote-section">
+            <button class="vote-btn" title="Upvote">▲</button>
+            <div class="vote-score">${post.votes.toLocaleString()}</div>
+            <button class="vote-btn down" title="Downvote">▼</button>
+          </div>
+          <div class="post-content">
+            <h2>${escapeHtml(post.title)}</h2>
+            <div class="post-meta">
+              <span class="badge badge-cause">🏷 ${post.cause}</span>
+              <span class="badge badge-severity ${post.severity}">${post.severity.toUpperCase()}</span>
+              <span>•</span>
+              <span><strong>${escapeHtml(post.product)}</strong></span>
+              <span>•</span>
+              <span>${escapeHtml(post.category)}</span>
+              <span>•</span>
+              <span>${post.year}</span>
+              ${post.tags.slice(0, 3).map(tag => `<span class="hashtag">#${tag}</span>`).join("")}
+            </div>
+            <div class="post-summary">${escapeHtml(post.summary)}</div>
+            <div class="post-footer">
+              <div class="post-actions">
+                <span class="action-link">💬 Discuss</span>
+                <span class="action-link">🧠 Lesson</span>
+                <span class="action-link">🔗 Source</span>
+                <span class="action-link">📌 Save</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    chipGroup.addEventListener("click", (e) => {
+      const chip = e.target.closest(".chip");
+      if (!chip) return;
+      chipGroup.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      activeCause = chip.dataset.cause;
+      renderFeed();
+    });
+
+    sortSelect.addEventListener("change", (e) => {
+      activeSort = e.target.value;
+      renderFeed();
+    });
+
+    severitySelect.addEventListener("change", (e) => {
+      activeSeverity = e.target.value;
+      renderFeed();
+    });
+
+    searchInput.addEventListener("input", (e) => {
+      searchQuery = e.target.value;
+      renderFeed();
+    });
+
+    themeToggle.addEventListener("click", () => {
+      const isDark = document.body.getAttribute("data-theme") === "dark";
+      document.body.setAttribute("data-theme", isDark ? "light" : "dark");
+      themeToggle.textContent = isDark ? "☀️" : "🌙";
+    });
+
+    savedBtn.addEventListener("click", () => {
+      showToast("Opened Saved ✓");
+    });
+
+    function openModal() {
+      modalBackdrop.classList.add("show");
+      document.getElementById("titleInput").focus();
+    }
+
+    function closeModalFunc() {
+      modalBackdrop.classList.remove("show");
+      document.getElementById("titleInput").value = "";
+      document.getElementById("productInput").value = "";
+      document.getElementById("yearInput").value = "";
+      document.getElementById("categoryInput").value = "";
+      document.getElementById("causeInput").value = "";
+      document.getElementById("severityInput").value = "med";
+      document.getElementById("summaryInput").value = "";
+    }
+
+    newPostBtn.addEventListener("click", openModal);
+    newPostBtn2.addEventListener("click", openModal);
+    closeModal.addEventListener("click", closeModalFunc);
+    cancelBtn.addEventListener("click", closeModalFunc);
+    modalBackdrop.addEventListener("click", (e) => {
+      if (e.target === modalBackdrop) closeModalFunc();
+    });
+
+    submitBtn.addEventListener("click", () => {
+      const title = document.getElementById("titleInput").value.trim() || "Untitled failure";
+      const product = document.getElementById("productInput").value.trim() || "Unknown";
+      const year = parseInt(document.getElementById("yearInput").value.trim() || "2025", 10);
+      const category = document.getElementById("categoryInput").value.trim() || "general";
+      const cause = document.getElementById("causeInput").value.trim().toLowerCase() || "strategy";
+      const severity = document.getElementById("severityInput").value;
+      const summary = document.getElementById("summaryInput").value.trim() || "Add details about what happened, impact, fix, and lesson.";
+
+      const newPost = {
+        id: Date.now(),
+        votes: Math.floor(80 + Math.random() * 350),
+        title,
+        product,
+        year,
+        category,
+        cause,
+        severity,
+        tags: [cause].slice(0, 1),
+        summary
+      };
+
+      allPosts.unshift(newPost);
+      closeModalFunc();
+      showToast("Posted ✓");
+      renderFeed();
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchInput.focus();
+      }
+      if (e.key === "Escape" && modalBackdrop.classList.contains("show")) {
+        closeModalFunc();
+      }
+    });
+
+    renderFeed();
+  </script>
+</body>
+</html>
+</html>
