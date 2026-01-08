@@ -1,0 +1,4 @@
+Backend: localhost:8000 (uvicorn)
+Frontend: localhost:3000 (npm run dev)
+Working: votes, comments, post listing
+User ID: localStorage UUID
