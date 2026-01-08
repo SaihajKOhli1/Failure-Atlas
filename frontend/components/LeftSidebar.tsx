@@ -5,19 +5,24 @@ type CauseOption = 'all' | 'pricing' | 'ux' | 'infra' | 'trust' | 'timing' | 'di
 interface LeftSidebarProps {
   activeCause: CauseOption;
   onCauseChange: (cause: CauseOption) => void;
+  activeView?: 'feed' | 'saved';
+  onViewChange?: (view: 'feed' | 'saved') => void;
   loading?: boolean;
 }
 
-export default function LeftSidebar({ activeCause, onCauseChange, loading = false }: LeftSidebarProps) {
+export default function LeftSidebar({ activeCause, onCauseChange, activeView = 'feed', onViewChange, loading = false }: LeftSidebarProps) {
   return (
     <aside className="sidebar-left">
       <div className="panel">
         <div className="panel-header">Explore</div>
         <div className="panel-body">
           <ul className="nav-list">
-            <li className="nav-item active">
+            <li className={`nav-item ${activeView === 'feed' ? 'active' : ''}`} onClick={() => onViewChange?.('feed')} style={{ cursor: 'pointer' }}>
               <span>🏠 Home Feed</span>
               <span className="nav-badge">hot</span>
+            </li>
+            <li className={`nav-item ${activeView === 'saved' ? 'active' : ''}`} onClick={() => onViewChange?.('saved')} style={{ cursor: 'pointer' }}>
+              <span>📌 Saved</span>
             </li>
             <li className="nav-item">
               <span>🧯 Postmortems</span>

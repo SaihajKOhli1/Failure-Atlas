@@ -6,10 +6,11 @@ interface TopbarProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
   onNewPostClick: () => void;
+  onSavedClick?: () => void;
   loading?: boolean;
 }
 
-export default function Topbar({ searchQuery, onSearchChange, onNewPostClick, loading = false }: TopbarProps) {
+export default function Topbar({ searchQuery, onSearchChange, onNewPostClick, onSavedClick, loading = false }: TopbarProps) {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   const toggleTheme = () => {
@@ -42,7 +43,7 @@ export default function Topbar({ searchQuery, onSearchChange, onNewPostClick, lo
             <button className="btn icon" onClick={toggleTheme}>
               {theme === 'dark' ? '🌙' : '☀️'}
             </button>
-            <button className="btn">🔖 Saved</button>
+            <button className="btn" onClick={onSavedClick}>🔖 Saved</button>
             <button className="btn primary" onClick={onNewPostClick}>
               ➕ New Failure
             </button>

@@ -108,6 +108,105 @@ curl -X POST http://localhost:8000/posts \
 curl http://localhost:8000/analytics/top-causes
 ```
 
+### Anonymous Authentication
+
+```bash
+# Create an anonymous user
+curl -X POST http://localhost:8000/auth/anon
+```
+
+Response:
+```json
+{"user_id": "550e8400-e29b-41d4-a716-446655440000"}
+```
+
+Use this `user_id` in the `X-User-Id` header for authenticated endpoints.
+
+### Voting
+
+```bash
+# Upvote a post
+curl -X POST http://localhost:8000/posts/1/vote \
+  -H "Content-Type: application/json" \
+  -H "X-User-Id: 550e8400-e29b-41d4-a716-446655440000" \
+  -d '{"value": 1}'
+
+# Downvote a post
+curl -X POST http://localhost:8000/posts/1/vote \
+  -H "Content-Type: application/json" \
+  -H "X-User-Id: 550e8400-e29b-41d4-a716-446655440000" \
+  -d '{"value": -1}'
+
+# Remove vote (value: 0)
+curl -X POST http://localhost:8000/posts/1/vote \
+  -H "Content-Type: application/json" \
+  -H "X-User-Id: 550e8400-e29b-41d4-a716-446655440000" \
+  -d '{"value": 0}'
+```
+
+Response:
+```json
+{"post_id": 1, "votes": 123, "user_vote": 1}
+```
+
+### Saving Posts
+
+```bash
+# Save a post
+curl -X POST http://localhost:8000/posts/1/save \
+  -H "X-User-Id: 550e8400-e29b-41d4-a716-446655440000"
+
+# Unsave a post
+curl -X DELETE http://localhost:8000/posts/1/save \
+  -H "X-User-Id: 550e8400-e29b-41d4-a716-446655440000"
+
+# Get saved posts
+curl http://localhost:8000/me/saved \
+  -H "X-User-Id: 550e8400-e29b-41d4-a716-446655440000"
+```
+
+### Comments
+
+```bash
+# Get comments for a post
+curl http://localhost:8000/posts/1/comments
+
+# Create a comment
+curl -X POST http://localhost:8000/posts/1/comments \
+  -H "Content-Type: application/json" \
+  -H "X-User-Id: 550e8400-e29b-41d4-a716-446655440000" \
+  -d '{"content": "This is a comment"}'
+```
+
+Response:
+```json
+{
+  "id": 1,
+  "post_id": 1,
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "content": "This is a comment",
+  "created_at": "2024-01-01T12:00:00Z"
+}
+```
+
+### Enriched Post Responses
+
+When you include the `X-User-Id` header in `GET /posts`, the response includes additional fields:
+
+```json
+{
+  "id": 1,
+  "votes": 123,
+  "title": "Example Post",
+  "user_vote": 1,      // -1, 0, or 1 (0 if no vote)
+  "saved": true,       // boolean
+  "comment_count": 5,  // integer
+  ...
+}
+```
+
+Without the `X-User-Id` header, `user_vote` defaults to 0 and `saved` defaults to false.
+
 ## Project Structure
 
 ```
@@ -147,6 +246,30 @@ backend/
 - `post_id` (FK to posts.id, CASCADE delete)
 - `tag_id` (FK to tags.id, CASCADE delete)
 - PRIMARY KEY (post_id, tag_id)
+
+### users table
+- `id` (UUID PRIMARY KEY, auto-generated)
+- `created_at` (TIMESTAMPTZ, default now())
+
+### votes table
+- `user_id` (UUID, FK to users.id, CASCADE delete)
+- `post_id` (INTEGER, FK to posts.id, CASCADE delete)
+- `value` (SMALLINT, CHECK value IN (-1, 1))
+- `created_at` (TIMESTAMPTZ, default now())
+- PRIMARY KEY (user_id, post_id)
+
+### saves table
+- `user_id` (UUID, FK to users.id, CASCADE delete)
+- `post_id` (INTEGER, FK to posts.id, CASCADE delete)
+- `created_at` (TIMESTAMPTZ, default now())
+- PRIMARY KEY (user_id, post_id)
+
+### comments table
+- `id` (BIGSERIAL PRIMARY KEY)
+- `post_id` (INTEGER, FK to posts.id, CASCADE delete)
+- `user_id` (UUID, FK to users.id, CASCADE delete)
+- `content` (TEXT, NOT NULL, length 1-2000)
+- `created_at` (TIMESTAMPTZ, default now())
 
 ## Full-Text Search (PostgreSQL FTS)
 

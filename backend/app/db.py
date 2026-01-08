@@ -72,4 +72,65 @@ def init_db():
         """))
         conn.commit()
         print("Ensured GIN index for Full-Text Search exists")
+        
+        # Create users table
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS users (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                created_at TIMESTAMPTZ DEFAULT now()
+            )
+        """))
+        conn.commit()
+        print("Ensured users table exists")
+        
+        # Create votes table
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS votes (
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+                value SMALLINT NOT NULL CHECK (value IN (-1, 1)),
+                created_at TIMESTAMPTZ DEFAULT now(),
+                PRIMARY KEY (user_id, post_id)
+            )
+        """))
+        conn.commit()
+        print("Ensured votes table exists")
+        
+        # Create saves table
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS saves (
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+                created_at TIMESTAMPTZ DEFAULT now(),
+                PRIMARY KEY (user_id, post_id)
+            )
+        """))
+        conn.commit()
+        print("Ensured saves table exists")
+        
+        # Create comments table
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS comments (
+                id BIGSERIAL PRIMARY KEY,
+                post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                content TEXT NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT now()
+            )
+        """))
+        conn.commit()
+        print("Ensured comments table exists")
+        
+        # Create indexes for better performance
+        conn.execute(text("""
+            CREATE INDEX IF NOT EXISTS idx_votes_post_id ON votes(post_id)
+        """))
+        conn.execute(text("""
+            CREATE INDEX IF NOT EXISTS idx_saves_user_id ON saves(user_id)
+        """))
+        conn.execute(text("""
+            CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments(post_id)
+        """))
+        conn.commit()
+        print("Ensured indexes exist for votes, saves, and comments")
 

@@ -3,6 +3,7 @@ from sqlalchemy import desc, or_, func as sql_func, text
 from app.models import Post, Tag
 from typing import Optional
 import random
+import uuid
 
 def get_posts(
     db: Session,
@@ -11,11 +12,12 @@ def get_posts(
     severity: str = "all",
     sort: str = "hot",
     skip: int = 0,
-    limit: int = 100
+    limit: int = 100,
+    user_id: Optional[str] = None
 ):
     # If search query is provided, use Full-Text Search
     if q and q.strip():
-        return _get_posts_with_fts(db, q.strip(), cause, severity, sort, skip, limit)
+        return _get_posts_with_fts(db, q.strip(), cause, severity, sort, skip, limit, user_id)
     
     # Otherwise use regular filtering
     query = db.query(Post)
@@ -42,6 +44,43 @@ def get_posts(
 
     # Convert to dict format with tags as string array
     result = []
+    post_ids = [post.id for post in posts]
+    
+    # Fetch user-specific data if user_id provided
+    user_votes = {}
+    user_saves = set()
+    comment_counts = {}
+    
+    if user_id:
+        # Get user votes
+        votes_result = db.execute(
+            text("SELECT post_id, value FROM votes WHERE user_id = :user_id AND post_id = ANY(:post_ids)"),
+            {"user_id": user_id, "post_ids": post_ids}
+        )
+        user_votes = {row[0]: row[1] for row in votes_result}
+        
+        # Get user saves
+        saves_result = db.execute(
+            text("SELECT post_id FROM saves WHERE user_id = :user_id AND post_id = ANY(:post_ids)"),
+            {"user_id": user_id, "post_ids": post_ids}
+        )
+        user_saves = {row[0] for row in saves_result}
+        
+        # Get comment counts
+        counts_result = db.execute(
+            text("SELECT post_id, COUNT(*) as cnt FROM comments WHERE post_id = ANY(:post_ids) GROUP BY post_id"),
+            {"post_ids": post_ids}
+        )
+        comment_counts = {row[0]: row[1] for row in counts_result}
+    
+    # Get comment counts for all posts if no user_id
+    if not user_id:
+        counts_result = db.execute(
+            text("SELECT post_id, COUNT(*) as cnt FROM comments WHERE post_id = ANY(:post_ids) GROUP BY post_id"),
+            {"post_ids": post_ids}
+        )
+        comment_counts = {row[0]: row[1] for row in counts_result}
+    
     for post in posts:
         post_dict = {
             "id": post.id,
@@ -54,7 +93,10 @@ def get_posts(
             "severity": post.severity,
             "summary": post.summary,
             "tags": [tag.name for tag in post.tags],
-            "created_at": post.created_at
+            "created_at": post.created_at,
+            "user_vote": user_votes.get(post.id, 0),
+            "saved": post.id in user_saves,
+            "comment_count": comment_counts.get(post.id, 0)
         }
         result.append(post_dict)
 
@@ -67,7 +109,8 @@ def _get_posts_with_fts(
     severity: str,
     sort: str,
     skip: int,
-    limit: int
+    limit: int,
+    user_id: Optional[str] = None
 ):
     """Get posts using PostgreSQL Full-Text Search"""
     # Build WHERE clause for filters
@@ -122,6 +165,41 @@ def _get_posts_with_fts(
     # Create a map for ordering
     post_map = {post.id: post for post in posts}
     
+    # Fetch user-specific data if user_id provided
+    user_votes = {}
+    user_saves = set()
+    comment_counts = {}
+    
+    if user_id:
+        # Get user votes
+        votes_result = db.execute(
+            text("SELECT post_id, value FROM votes WHERE user_id = :user_id AND post_id = ANY(:post_ids)"),
+            {"user_id": user_id, "post_ids": post_ids}
+        )
+        user_votes = {row[0]: row[1] for row in votes_result}
+        
+        # Get user saves
+        saves_result = db.execute(
+            text("SELECT post_id FROM saves WHERE user_id = :user_id AND post_id = ANY(:post_ids)"),
+            {"user_id": user_id, "post_ids": post_ids}
+        )
+        user_saves = {row[0] for row in saves_result}
+        
+        # Get comment counts
+        counts_result = db.execute(
+            text("SELECT post_id, COUNT(*) as cnt FROM comments WHERE post_id = ANY(:post_ids) GROUP BY post_id"),
+            {"post_ids": post_ids}
+        )
+        comment_counts = {row[0]: row[1] for row in counts_result}
+    
+    # Get comment counts for all posts if no user_id
+    if not user_id:
+        counts_result = db.execute(
+            text("SELECT post_id, COUNT(*) as cnt FROM comments WHERE post_id = ANY(:post_ids) GROUP BY post_id"),
+            {"post_ids": post_ids}
+        )
+        comment_counts = {row[0]: row[1] for row in counts_result}
+    
     # Convert to dict format maintaining order
     result_list = []
     for post_id in post_ids:
@@ -138,7 +216,10 @@ def _get_posts_with_fts(
                 "severity": post.severity,
                 "summary": post.summary,
                 "tags": [tag.name for tag in post.tags],
-                "created_at": post.created_at
+                "created_at": post.created_at,
+                "user_vote": user_votes.get(post.id, 0),
+                "saved": post.id in user_saves,
+                "comment_count": comment_counts.get(post.id, 0)
             })
     
     return result_list, total
@@ -239,4 +320,219 @@ def get_top_causes(db: Session, limit: int = 4):
         })
 
     return result, total_posts
+
+def create_anonymous_user(db: Session) -> str:
+    """Create an anonymous user and return the user_id"""
+    result = db.execute(text("INSERT INTO users DEFAULT VALUES RETURNING id"))
+    user_id = str(result.fetchone()[0])
+    db.commit()
+    return user_id
+
+def ensure_user(db: Session, user_id: str):
+    """Ensure user exists, creating it if needed"""
+    db.execute(
+        text("INSERT INTO users(id) VALUES (:id) ON CONFLICT DO NOTHING"),
+        {"id": user_id}
+    )
+    db.flush()
+
+def vote_post(db: Session, user_id: str, post_id: int, value: int):
+    """Vote on a post. value: -1 (downvote), 0 (remove), 1 (upvote)"""
+    # Ensure user exists
+    ensure_user(db, user_id)
+    
+    # Get current vote if exists
+    current_vote = db.execute(
+        text("SELECT value FROM votes WHERE user_id = :user_id AND post_id = :post_id"),
+        {"user_id": user_id, "post_id": post_id}
+    ).fetchone()
+    
+    current_value = current_vote[0] if current_vote else 0
+    
+    if value == 0:
+        # Remove vote
+        if current_vote:
+            db.execute(
+                text("DELETE FROM votes WHERE user_id = :user_id AND post_id = :post_id"),
+                {"user_id": user_id, "post_id": post_id}
+            )
+            # Update post votes
+            db.execute(
+                text("UPDATE posts SET votes = votes - :current_value WHERE id = :post_id"),
+                {"current_value": current_value, "post_id": post_id}
+            )
+            new_vote_value = 0
+    else:
+        # Upsert vote
+        if current_vote:
+            # Update existing vote
+            db.execute(
+                text("UPDATE votes SET value = :value WHERE user_id = :user_id AND post_id = :post_id"),
+                {"value": value, "user_id": user_id, "post_id": post_id}
+            )
+            # Update post votes: subtract old value, add new value
+            db.execute(
+                text("UPDATE posts SET votes = votes - :current_value + :new_value WHERE id = :post_id"),
+                {"current_value": current_value, "new_value": value, "post_id": post_id}
+            )
+            new_vote_value = value
+        else:
+            # Insert new vote
+            db.execute(
+                text("INSERT INTO votes (user_id, post_id, value) VALUES (:user_id, :post_id, :value)"),
+                {"user_id": user_id, "post_id": post_id, "value": value}
+            )
+            # Update post votes
+            db.execute(
+                text("UPDATE posts SET votes = votes + :value WHERE id = :post_id"),
+                {"value": value, "post_id": post_id}
+            )
+            new_vote_value = value
+    
+    db.commit()
+    
+    # Get updated vote count
+    post_votes = db.execute(
+        text("SELECT votes FROM posts WHERE id = :post_id"),
+        {"post_id": post_id}
+    ).fetchone()[0]
+    
+    return {
+        "post_id": post_id,
+        "votes": post_votes,
+        "user_vote": new_vote_value
+    }
+
+def save_post(db: Session, user_id: str, post_id: int):
+    """Save a post for a user"""
+    # Ensure user exists
+    ensure_user(db, user_id)
+    
+    db.execute(
+        text("INSERT INTO saves (user_id, post_id) VALUES (:user_id, :post_id) ON CONFLICT DO NOTHING"),
+        {"user_id": user_id, "post_id": post_id}
+    )
+    db.commit()
+
+def unsave_post(db: Session, user_id: str, post_id: int):
+    """Unsave a post for a user"""
+    # Ensure user exists
+    ensure_user(db, user_id)
+    
+    db.execute(
+        text("DELETE FROM saves WHERE user_id = :user_id AND post_id = :post_id"),
+        {"user_id": user_id, "post_id": post_id}
+    )
+    db.commit()
+
+def get_saved_posts(db: Session, user_id: str, skip: int = 0, limit: int = 100):
+    """Get saved posts for a user"""
+    # Ensure user exists
+    ensure_user(db, user_id)
+    
+    saved_post_ids = db.execute(
+        text("SELECT post_id FROM saves WHERE user_id = :user_id ORDER BY created_at DESC LIMIT :limit OFFSET :skip"),
+        {"user_id": user_id, "limit": limit, "skip": skip}
+    ).fetchall()
+    
+    post_ids = [row[0] for row in saved_post_ids]
+    
+    if not post_ids:
+        return [], 0
+    
+    posts = db.query(Post).filter(Post.id.in_(post_ids)).all()
+    
+    # Maintain order
+    post_map = {post.id: post for post in posts}
+    ordered_posts = [post_map[pid] for pid in post_ids if pid in post_map]
+    
+    # Get user votes, saves, comment counts
+    user_votes = {}
+    user_saves = set(post_ids)
+    comment_counts = {}
+    
+    votes_result = db.execute(
+        text("SELECT post_id, value FROM votes WHERE user_id = :user_id AND post_id = ANY(:post_ids)"),
+        {"user_id": user_id, "post_ids": post_ids}
+    )
+    user_votes = {row[0]: row[1] for row in votes_result}
+    
+    counts_result = db.execute(
+        text("SELECT post_id, COUNT(*) as cnt FROM comments WHERE post_id = ANY(:post_ids) GROUP BY post_id"),
+        {"post_ids": post_ids}
+    )
+    comment_counts = {row[0]: row[1] for row in counts_result}
+    
+    result = []
+    for post in ordered_posts:
+        result.append({
+            "id": post.id,
+            "votes": post.votes,
+            "title": post.title,
+            "product": post.product,
+            "year": post.year,
+            "category": post.category,
+            "cause": post.cause,
+            "severity": post.severity,
+            "summary": post.summary,
+            "tags": [tag.name for tag in post.tags],
+            "created_at": post.created_at,
+            "user_vote": user_votes.get(post.id, 0),
+            "saved": True,
+            "comment_count": comment_counts.get(post.id, 0)
+        })
+    
+    total = db.execute(
+        text("SELECT COUNT(*) FROM saves WHERE user_id = :user_id"),
+        {"user_id": user_id}
+    ).fetchone()[0]
+    
+    return result, total
+
+def get_comments(db: Session, post_id: int):
+    """Get comments for a post"""
+    comments = db.execute(
+        text("""
+            SELECT id, post_id, user_id, content, created_at 
+            FROM comments 
+            WHERE post_id = :post_id 
+            ORDER BY created_at ASC
+        """),
+        {"post_id": post_id}
+    ).fetchall()
+    
+    return [
+        {
+            "id": row[0],
+            "post_id": row[1],
+            "user_id": str(row[2]),
+            "content": row[3],
+            "created_at": row[4]
+        }
+        for row in comments
+    ]
+
+def create_comment(db: Session, user_id: str, post_id: int, content: str):
+    """Create a comment on a post"""
+    # Ensure user exists
+    ensure_user(db, user_id)
+    
+    result = db.execute(
+        text("""
+            INSERT INTO comments (post_id, user_id, content) 
+            VALUES (:post_id, :user_id, :content) 
+            RETURNING id, post_id, user_id, content, created_at
+        """),
+        {"post_id": post_id, "user_id": user_id, "content": content}
+    )
+    row = result.fetchone()
+    db.commit()
+    
+    return {
+        "id": row[0],
+        "post_id": row[1],
+        "user_id": str(row[2]),
+        "content": row[3],
+        "created_at": row[4]
+    }
 

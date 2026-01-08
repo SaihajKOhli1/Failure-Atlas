@@ -411,6 +411,20 @@ select:disabled {
   border-color: var(--danger);
 }
 
+.vote-btn.active {
+  background: rgba(52, 168, 83, 0.2);
+  border-color: var(--success);
+}
+
+.vote-btn.down.active {
+  background: rgba(234, 67, 53, 0.2);
+  border-color: var(--danger);
+}
+
+.action-link.active {
+  color: var(--accent-from);
+}
+
 .vote-score {
   font-weight: 700;
   font-size: 14px;

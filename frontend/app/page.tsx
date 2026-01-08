@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getPosts, getTopCauses, createPost, type Post, type CauseAnalytics, type PostIn } from '@/lib/api';
+import { ensureAnonUser, getPosts, getTopCauses, createPost, fetchSaved, type Post, type CauseAnalytics, type PostIn } from '@/lib/api';
 import Topbar from '@/components/Topbar';
 import LeftSidebar from '@/components/LeftSidebar';
 import Feed from '@/components/Feed';
 import AnalyticsSidebar from '@/components/AnalyticsSidebar';
 import NewPostModal from '@/components/NewPostModal';
+import PostDetailModal from '@/components/PostDetailModal';
 import Toast from '@/components/Toast';
 
 type SortOption = 'hot' | 'new' | 'top';
@@ -27,9 +28,12 @@ export default function Home() {
   const [severity, setSeverity] = useState<SeverityOption>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [view, setView] = useState<'feed' | 'saved'>('feed');
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Debounce search query with 300ms delay
   useEffect(() => {
@@ -40,26 +44,33 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Fetch posts when any filter changes
+  // Fetch posts when any filter changes or view changes
   useEffect(() => {
     const fetchPostsData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await getPosts({
-          q: debouncedQuery || undefined,
-          sort,
-          cause: cause !== 'all' ? cause : undefined,
-          severity: severity !== 'all' ? severity : undefined,
-        });
+        let response;
+        if (view === 'saved') {
+          response = await fetchSaved();
+        } else {
+          response = await getPosts({
+            q: debouncedQuery || undefined,
+            sort,
+            cause: cause !== 'all' ? cause : undefined,
+            severity: severity !== 'all' ? severity : undefined,
+          });
+        }
         setPosts(response.items);
         setTotal(response.total);
-        // Refetch analytics when posts are successfully fetched
-        try {
-          const analyticsResponse = await getTopCauses();
-          setAnalytics(analyticsResponse.items);
-        } catch (analyticsErr) {
-          console.error('[Failure Atlas] Error fetching analytics after posts update:', analyticsErr);
+        // Refetch analytics when posts are successfully fetched (only for feed view)
+        if (view === 'feed') {
+          try {
+            const analyticsResponse = await getTopCauses();
+            setAnalytics(analyticsResponse.items);
+          } catch (analyticsErr) {
+            console.error('[Failure Atlas] Error fetching analytics after posts update:', analyticsErr);
+          }
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch posts';
@@ -72,7 +83,7 @@ export default function Home() {
     };
 
     fetchPostsData();
-  }, [debouncedQuery, sort, cause, severity]);
+  }, [debouncedQuery, sort, cause, severity, view]);
 
   // Refetch function for analytics
   const fetchAnalyticsData = async () => {
@@ -83,6 +94,18 @@ export default function Home() {
       console.error('[Failure Atlas] Error fetching analytics:', err instanceof Error ? err.message : 'Unknown error', err);
     }
   };
+
+  // Ensure anonymous user on mount
+  useEffect(() => {
+    const initUser = async () => {
+      try {
+        await ensureAnonUser();
+      } catch (err) {
+        console.error('[Failure Atlas] Error initializing user:', err);
+      }
+    };
+    initUser();
+  }, []);
 
   // Fetch analytics on mount
   useEffect(() => {
@@ -151,6 +174,7 @@ export default function Home() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onNewPostClick={() => setIsModalOpen(true)}
+        onSavedClick={() => setView('saved')}
         loading={loading}
       />
       <div className="container">
@@ -158,6 +182,8 @@ export default function Home() {
           <LeftSidebar
             activeCause={cause}
             onCauseChange={setCause}
+            activeView={view}
+            onViewChange={setView}
             loading={loading}
           />
           <Feed
@@ -168,6 +194,17 @@ export default function Home() {
             onSortChange={setSort}
             onSeverityChange={setSeverity}
             loading={loading}
+            showFilters={view === 'feed'}
+            onPostUpdate={(updatedPost) => {
+              setPosts(posts.map(p => p.id === updatedPost.id ? updatedPost : p));
+              if (selectedPost?.id === updatedPost.id) {
+                setSelectedPost(updatedPost);
+              }
+            }}
+            onPostClick={(post) => {
+              setSelectedPost(post);
+              setIsDetailModalOpen(true);
+            }}
           />
           <AnalyticsSidebar
             analytics={analytics}
@@ -180,6 +217,19 @@ export default function Home() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handlePostSubmit}
+      />
+
+      <PostDetailModal
+        post={selectedPost}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedPost(null);
+        }}
+        onPostUpdate={(updatedPost) => {
+          setPosts(posts.map(p => p.id === updatedPost.id ? updatedPost : p));
+          setSelectedPost(updatedPost);
+        }}
       />
 
       <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
