@@ -1,0 +1,2 @@
+"""BugJournal CLI commands"""
+

@@ -1,0 +1,8 @@
+# BugJournal CLI Requirements
+# Alternative to pyproject.toml for simple pip install
+
+typer>=0.9.0
+requests>=2.31.0
+pyyaml>=6.0
+rich>=13.0.0
+

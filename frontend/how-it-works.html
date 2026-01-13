@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How It Works - BugJournal</title>
+    <meta name="description"
+        content="Understand the BugJournal workflow: Write locally, push via CLI, browse globally.">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="index.html" class="nav-logo">
+                <span>⚡</span> BugJournal
+            </a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="index.html#journal" class="nav-link">Journal</a>
+                <a href="how-it-works.html" class="nav-link active">How It Works</a>
+                <a href="project.html" class="nav-link">Project</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <main class="docs-container">
+
+        <!-- Header -->
+        <header class="docs-header">
+            <h1>How BugJournal Works</h1>
+            <p>Treating bugs as versioned knowledge units.</p>
+            <p style="font-size: 1rem; margin-top: 1rem; opacity: 0.8; color: var(--accent-gold);">
+                (Short version is on the homepage; this page goes deeper.)
+            </p>
+        </header>
+
+        <!-- Workflow Overview -->
+        <section class="docs-section">
+            <h2>The Workflow</h2>
+            <div class="workflow-steps">
+                <div class="workflow-step">
+                    <h3>Initialize a Journal</h3>
+                    <p>Create a <code>.bugjournal</code> configuration in your project root or home directory. This
+                        tells the CLI where to look for entries and where to push them.</p>
+                </div>
+                <div class="workflow-step">
+                    <h3>Write Locally</h3>
+                    <p>Create new bug entries as Markdown files. Use your favorite text editor (VS Code, Vim, Zed) to
+                        document the issue while it's fresh in your mind.</p>
+                </div>
+                <div class="workflow-step">
+                    <h3>Push via CLI</h3>
+                    <p>Run <code>bugjournal push</code>. The CLI parses your markdown files, hashes content to prevent
+                        duplicates, and sends them to your BugJournal server.</p>
+                </div>
+                <div class="workflow-step">
+                    <h3>Browse & Search</h3>
+                    <p>View your collective debugging history in a clean, GitHub-issue-style web interface. Search by
+                        tags, language, or error messages.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CLI Installation -->
+        <section class="docs-section">
+            <h2>1. Installation</h2>
+            <p>BugJournal is a Python package. Install it via pip:</p>
+            <pre><code><span class="token-comment"># Install via pip</span>
+pip install bugjournal
+
+<span class="token-comment"># Or install in editable mode if developing</span>
+git clone https://github.com/saihajkohli/bugjournal
+cd bugjournal
+pip install -e .</code></pre>
+            <p>Once installed, you can generate a default configuration file:</p>
+            <pre><code>bugjournal init</code></pre>
+            <p>This creates a <code>.bugjournal/config.json</code> file where you define your server URL and journal
+                directory.</p>
+        </section>
+
+        <!-- Writing an Entry -->
+        <section class="docs-section">
+            <h2>2. Writing an Entry</h2>
+            <p>Bug entries are just Markdown files with Frontmatter. You can name them anything you like (e.g.,
+                <code>2023-10-24-cors-error.md</code>).
+            </p>
+            <p>Here is the canonical structure:</p>
+            <pre><code>---
+<span class="token-keyword">title</span>: "CORS Error on Staging API"
+<span class="token-keyword">date</span>: 2023-10-24
+<span class="token-keyword">tags</span>: [frontend, axios, cors]
+<span class="token-keyword">status</span>: solved
+---
+
+<span class="token-variable"># Symptom</span>
+API requests fail with `Access-Control-Allow-Origin` missing.
+
+<span class="token-variable"># Root Cause</span>
+The staging load balancer was stripping the CORS headers added by FastAPI.
+
+<span class="token-variable"># Fix</span>
+Updated Nginx config on the LB to pass through `OPTIONS` requests correctly.
+
+<span class="token-variable"># Lesson</span>
+Always check intermediate proxies when headers go missing.</code></pre>
+            <p>The "Symptom", "Root Cause", and "Fix" headers are recommended, but you can structure the body however
+                you prefer.</p>
+        </section>
+
+        <!-- Pushing Entries -->
+        <section class="docs-section">
+            <h2>3. Pushing Entries</h2>
+            <p>Syncing your local journal with the server is one command:</p>
+            <pre><code>bugjournal push</code></pre>
+            <h3>Idempotency & Hashing</h3>
+            <p>BugJournal uses a content-addressable approach to prevent duplicates. When you push:</p>
+            <ul>
+                <li>The CLI calculates a SHA-256 hash of the <strong>frontmatter + content</strong>.</li>
+                <li>It checks if an entry with this hash already exists on the server.</li>
+                <li>If it exists, it skips the upload. If not, it creates a new record.</li>
+            </ul>
+            <p>This means you can run <code>push</code> as many times as you want without creating duplicate entries or
+                "update conflicts".</p>
+        </section>
+
+        <!-- Backend Layout -->
+        <section class="docs-section">
+            <h2>Backend Architecture</h2>
+            <p>The backend is designed to be simple and robust, capable of running on a Raspberry Pi or a cloud
+                instance.</p>
+            <ul>
+                <li><strong>FastAPI</strong>: High-performance async Python framework.</li>
+                <li><strong>PostgreSQL</strong>: Reliable relational storage for search and metadata.</li>
+                <li><strong>Bulk Endpoint</strong>: The server accepts batches of entries to minimize network
+                    round-trips during a full sync.</li>
+            </ul>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="index.html">Home</a>
+                <a href="https://github.com/saihajkohli/bugjournal">GitHub Repository</a>
+            </div>
+            <p>&copy; 2026 BugJournal.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Copy to clipboard functionality for code blocks could go here
+    </script>
+</body>
+
+</html>

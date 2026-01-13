@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BugJournal - A GitHub-style bug journal for developers</title>
+    <meta name="description"
+        content="BugJournal allows developers to write bug entries locally in markdown and browse them like GitHub issues.">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Fonts can be loaded here if needed, sticking to system stacks for speed and privacy default -->
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="#" class="nav-logo">
+                <span>⚡</span> BugJournal
+            </a>
+            <div class="nav-links">
+                <a href="#" class="nav-link active">Home</a>
+                <a href="#journal" class="nav-link">Journal</a>
+                <a href="how-it-works.html" class="nav-link">How It Works</a>
+                <a href="project.html" class="nav-link">Project</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>A GitHub-style bug journal<br>for developers.</h1>
+            <p>Debug smarter. Write entries locally in Markdown, push with a simple CLI, and build your personal
+                knowledge base.</p>
+            <div class="hero-actions">
+                <a href="https://github.com/saihajkohli/bugjournal" class="btn btn-primary">View on GitHub</a>
+                <a href="#how-it-works" class="btn btn-secondary">How it Works</a>
+            </div>
+        </div>
+        </div>
+        </div>
+    </section>
+
+    <!-- Condensed Workflow -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>The Workflow</h2>
+                <p>Simple enough for Monday mornings.</p>
+            </div>
+            <div class="condensed-workflow">
+                <div class="workflow-mini-step">
+                    <code>bugjournal init</code>
+                    <p>Setup your journal</p>
+                </div>
+                <div class="workflow-mini-step">
+                    <code>bugjournal new</code>
+                    <p>Write an entry</p>
+                </div>
+                <div class="workflow-mini-step">
+                    <code>bugjournal push</code>
+                    <p>Sync to server</p>
+                </div>
+                <div class="workflow-mini-step">
+                    <code>bugjournal web</code>
+                    <p>Browse history</p>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="how-it-works.html" class="btn btn-secondary" style="font-size: 0.9rem;">Read the full guide
+                    &rarr;</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Journal Preview -->
+    <section id="journal" class="section">
+        <div class="container">
+            <div class="section-header"
+                style="display: flex; justify-content: space-between; align-items: flex-end; text-align: left; border-bottom: none; margin-bottom: 1rem;">
+                <div>
+                    <h2>Browse Your Knowledge</h2>
+                    <p>A clean, searchable history of every bug you've squashed.</p>
+                </div>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <div class="live-mode-container">
+                        Live Mode
+                        <div class="toggle-switch" id="live-mode-toggle">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="btn-connect-repo">Connect Github Repo</button>
+                </div>
+            </div>
+
+            <div class="journal-preview">
+                <!-- Dynamic Header -->
+                <div class="repo-header" id="repo-header-container">
+                    <div class="repo-header-top">
+                        <div class="repo-info">
+                            <div class="repo-title" style="font-size: 1.25rem;">
+                                <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16"
+                                    fill="currentColor">
+                                    <path
+                                        d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8ZM5 12.25a.25.25 0 0 1 .25-.25h3.5a.25.25 0 0 1 .25.25v3.25a.25.25 0 0 1-.4.2l-1.45-1.087a.249.249 0 0 0-.3 0L5.4 15.7a.25.25 0 0 1-.4-.2Z">
+                                    </path>
+                                </svg>
+                                <span id="header-repo-name">saihajkohli / my-bug-journal</span>
+                                <span class="repo-badge" id="header-repo-visibility">Public</span>
+                            </div>
+                            <p class="repo-description" id="header-repo-desc">A demo of the bugjournal static site.</p>
+                            <div class="repo-stats">
+                                <span class="repo-stat"><svg aria-hidden="true" height="16" viewBox="0 0 16 16"
+                                        version="1.1" width="16" fill="currentColor">
+                                        <path
+                                            d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z">
+                                        </path>
+                                    </svg> <span id="stat-stars">12</span></span>
+                                <span class="repo-stat"><svg aria-hidden="true" height="16" viewBox="0 0 16 16"
+                                        version="1.1" width="16" fill="currentColor">
+                                        <path
+                                            d="M5 5.372v.878c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75v-.878a2.25 2.25 0 1 1 1.5 0v.878a2.25 2.25 0 0 1-2.25 2.25h-1.5v2.128a2.251 2.251 0 1 1-1.5 0V8.5h-1.5A2.25 2.25 0 0 1 3.5 6.25v-.878a2.25 2.25 0 1 1 1.5 0ZM5 3.25a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Zm6.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm-3 8.75a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Z">
+                                        </path>
+                                    </svg> <span id="stat-forks">4</span></span>
+                            </div>
+                        </div>
+                        <div class="repo-actions">
+                            <a href="#" target="_blank" class="btn btn-secondary" id="btn-open-github"
+                                style="padding: 0.4rem 0.8rem; font-size: 0.9rem;">Open on GitHub</a>
+                        </div>
+                    </div>
+                    <div class="repo-tabs">
+                        <div class="repo-tab active">Entries</div>
+                        <div class="repo-tab">Insights</div>
+                        <div class="repo-tab">Settings</div>
+                    </div>
+                </div>
+
+                <ul class="journal-list">
+                    <!-- Javascript will populate this -->
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Statement -->
+    <section class="section">
+        <div class="container problem-content">
+            <div class="section-header">
+                <h2>Stop Solving the Same Bug Twice</h2>
+            </div>
+            <p class="problem-text">
+                Debugging knowledge is often scattered across browser tabs, forgotten sticky notes, or lost in mental
+                overhead.
+                Excellent developers document their solutions, but the tools are often too heavy or too disconnected
+                from the code.
+            </p>
+        </div>
+    </section>
+
+    <!-- What BugJournal Does -->
+    <section id="how-it-works" class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>The Workflow</h2>
+                <p>Designed for the developer terminal flow.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>Markdown First</h3>
+                    <p>Write bug reports in your favorite editor using simple Markdown. No complex forms or web UIs to
+                        slow you down.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>CLI Powered</h3>
+                    <p>Push your entries with a single command. It fits right into your git workflow and terminal
+                        habits.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>GitHub-style UI</h3>
+                    <p>Browse your history with an interface you already know and love. Clean, readable, and familiar.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <h3>Idempotent Sync</h3>
+                    <p>Push as often as you like. We handle the diffs so you never end up with duplicate entries for the
+                        same issue.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Who it's for -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Built For Builders</h2>
+            </div>
+            <div class="audience-list">
+                <span class="audience-tag">Individual Developers</span>
+                <span class="audience-tag">Computer Science Students</span>
+                <span class="audience-tag">Small Engineering Teams</span>
+                <span class="audience-tag">Bootcamp Grads</span>
+                <span class="audience-tag">Open Source Maintainers</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="https://github.com/saihajkohli/bugjournal">GitHub Repository</a>
+            </div>
+            <p>&copy; 2026 BugJournal. All rights reserved.</p>
+            <p class="tech-stack">Built with FastAPI, PostgreSQL, and Love.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                document.querySelector(targetId).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Connect Modal Logic
+        const connectModalHtml = `
+            <div class="modal-overlay" id="connect-modal">
+                <div class="modal-content" style="width: 500px; transform: translateY(-20px); top: 10%; margin: 0 auto; height: auto; max-height: 80vh; border-radius: 6px;">
+                    <button class="close-modal" id="close-connect">&times;</button>
+                    <div class="modal-header">
+                        <h3 class="modal-title">Connect GitHub Repo</h3>
+                    </div>
+                    <div class="modal-body">
+                        <div class="connect-input-group">
+                            <label>GitHub Repository URL</label>
+                            <input type="text" class="connect-input" id="repo-url-input" placeholder="https://github.com/owner/repo">
+                        </div>
+                        <button class="btn btn-primary" style="width: 100%;" id="btn-submit-connect">Connect</button>
+                        
+                        <div class="recent-repos" id="recent-repos-list" style="display: none;">
+                            <h4 style="margin-bottom: 0.5rem; margin-top: 1.5rem; color: var(--text-secondary); font-size: 0.9rem;">Recent Repositories</h4>
+                            <!-- List items -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', connectModalHtml);
+
+        const connectModal = document.getElementById('connect-modal');
+        const btnConnect = document.getElementById('btn-connect-repo');
+        const btnSubmitConnect = document.getElementById('btn-submit-connect');
+        const closeConnect = document.getElementById('close-connect');
+        const repoUrlInput = document.getElementById('repo-url-input');
+        const recentReposList = document.getElementById('recent-repos-list');
+
+        function toggleConnectModal(show) {
+            connectModal.classList.toggle('active', show);
+            if (show) loadRecentRepos();
+        }
+
+        btnConnect.addEventListener('click', () => toggleConnectModal(true));
+        closeConnect.addEventListener('click', () => toggleConnectModal(false));
+        connectModal.addEventListener('click', (e) => {
+            if (e.target === connectModal) toggleConnectModal(false);
+        });
+
+        // Recent Repos
+        function loadRecentRepos() {
+            const repos = JSON.parse(localStorage.getItem('recent_repos') || '[]');
+            if (repos.length > 0) {
+                recentReposList.style.display = 'block';
+                recentReposList.innerHTML = '<h4 style="margin-bottom: 0.5rem; margin-top: 1.5rem; color: var(--text-secondary); font-size: 0.9rem;">Recent Repositories</h4>' +
+                    repos.map(r => `
+                    <div class="recent-repo-item" onclick="connectToRepo('${r.owner}', '${r.name}')">
+                        <span>${r.owner}/${r.name}</span>
+                        <span style="color: var(--accent-gold);">&rarr;</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function saveRecentRepo(owner, name) {
+            let repos = JSON.parse(localStorage.getItem('recent_repos') || '[]');
+            // remove duplicate
+            repos = repos.filter(r => !(r.owner === owner && r.name === name));
+            // unshift
+            repos.unshift({ owner, name });
+            // keep top 5
+            repos = repos.slice(0, 5);
+            localStorage.setItem('recent_repos', JSON.stringify(repos));
+        }
+
+        // Live Mode Logic
+        let isLiveMode = false;
+        const liveModeToggle = document.getElementById('live-mode-toggle');
+        const backendUrl = 'http://127.0.0.1:8000';
+        let currentUserId = localStorage.getItem('bj_user_id');
+
+        liveModeToggle.addEventListener('click', () => {
+            isLiveMode = !isLiveMode;
+            liveModeToggle.classList.toggle('active', isLiveMode);
+            // Re-fetch entries based on mode
+            const currentRepo = document.getElementById('header-repo-name').textContent.trim();
+            const [owner, name] = currentRepo.split(' / ');
+            if (owner && name) {
+                // Mock re-connect to trigger fetch
+                connectToRepo(owner, name);
+            } else {
+                alert('Connect a repo first!');
+            }
+        });
+
+        // GitHub & App Logic
+        btnSubmitConnect.addEventListener('click', () => {
+            const url = repoUrlInput.value.trim();
+            try {
+                // Regex for github url (simple)
+                // supports https://github.com/owner/repo or just owner/repo
+                let owner, name;
+                if (url.includes('github.com')) {
+                    const parts = new URL(url).pathname.split('/').filter(Boolean);
+                    if (parts.length >= 2) {
+                        owner = parts[0];
+                        name = parts[1];
+                    }
+                } else {
+                    const parts = url.split('/');
+                    if (parts.length === 2) {
+                        owner = parts[0];
+                        name = parts[1];
+                    }
+                }
+
+                if (owner && name) {
+                    connectToRepo(owner, name);
+                    toggleConnectModal(false);
+                } else {
+                    alert('Invalid GitHub URL format');
+                }
+            } catch (e) {
+                alert('Error parsing URL');
+            }
+        });
+
+        // Expose connectToRepo globally for the recent repo onclick
+        window.connectToRepo = async function (owner, name) {
+            // Update UI immediately to show loading or just Optimistic
+            document.getElementById('header-repo-name').textContent = `${owner} / ${name}`;
+            saveRecentRepo(owner, name);
+
+            // 1. Fetch GitHub Metadata
+            try {
+                const res = await fetch(`https://api.github.com/repos/${owner}/${name}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('header-repo-desc').textContent = data.description || 'No description provided.';
+                    document.getElementById('stat-stars').textContent = data.stargazers_count;
+                    document.getElementById('stat-forks').textContent = data.forks_count;
+                    document.getElementById('header-repo-visibility').textContent = data.private ? 'Private' : 'Public';
+
+                    const btnGithub = document.getElementById('btn-open-github');
+                    btnGithub.href = data.html_url;
+                    btnGithub.textContent = 'Open on GitHub';
+                } else {
+                    document.getElementById('header-repo-desc').textContent = `Using offline/cached metadata. (GitHub API: ${res.status})`;
+                }
+            } catch (e) {
+                console.error("GitHub API Error", e);
+                // Keep defaults if failed
+            }
+
+            // 2. Load Entries
+            if (isLiveMode) {
+                await fetchLiveEntries(owner, name);
+            } else {
+                // Load Demo Entries
+                renderEntries(demoEntries);
+            }
+        };
+
+        async function fetchLiveEntries(owner, name) {
+            const listEl = document.querySelector('.journal-list');
+            listEl.innerHTML = '<li class="journal-item">Loading live entries...</li>';
+
+            try {
+                // Auth if needed
+                if (!currentUserId) {
+                    try {
+                        const authRes = await fetch(`${backendUrl}/auth/anon`, { method: 'POST' });
+                        if (authRes.ok) {
+                            const authData = await authRes.json();
+                            currentUserId = authData.user_id;
+                            localStorage.setItem('bj_user_id', currentUserId);
+                        }
+                    } catch (e) {
+                        // ignore
+                    }
+                }
+
+                if (!currentUserId) {
+                    currentUserId = 'demo-user-123';
+                }
+
+                const repoName = `${owner}-${name}`;
+                let repoId;
+
+                // Optimistic creation/retrieval
+                const createRes = await fetch(`${backendUrl}/repos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-User-Id': currentUserId },
+                    body: JSON.stringify({ name: repoName, visibility: 'public' })
+                });
+
+                if (createRes.ok) {
+                    const repoData = await createRes.json();
+                    repoId = repoData.id;
+                } else if (createRes.status === 409) {
+                    // Already exists, we need to list to find it (inefficient but works for demo)
+                    const listRes = await fetch(`${backendUrl}/repos`, { headers: { 'X-User-Id': currentUserId } });
+                    const repos = await listRes.json();
+                    const found = repos.find(r => r.name === repoName);
+                    if (found) repoId = found.id;
+                }
+
+                if (repoId) {
+                    const entriesRes = await fetch(`${backendUrl}/repos/${repoId}/entries`, {
+                        headers: { 'X-User-Id': currentUserId }
+                    });
+                    const entries = await entriesRes.json();
+
+                    if (entries.length === 0) {
+                        listEl.innerHTML = '<li class="journal-item">No entries found in backend. Try "bugjournal push" locally!</li>';
+                    } else {
+                        // Map backend format to UI format
+                        const mapped = entries.map(e => ({
+                            id: e.id.substring(0, 8), // Short ID
+                            title: e.frontmatter.title || 'Untitled',
+                            status: e.frontmatter.status || 'open',
+                            tags: e.frontmatter.tags || [],
+                            date: new Date(e.created_at).toLocaleDateString(),
+                            body: e.content // Full content
+                        }));
+                        renderEntries(mapped);
+                    }
+                } else {
+                    throw new Error("Could not create/find repo");
+                }
+
+            } catch (e) {
+                console.error(e);
+                listEl.innerHTML = `
+                    <li class="journal-item" style="display:block; color: var(--text-secondary);">
+                        <strong>Connection Failed</strong><br>
+                        Could not reach BugJournal backend at ${backendUrl}.<br>
+                        Ensure server is running: <code>uvicorn app.main:app --reload</code>
+                    </li>
+                `;
+            }
+        }
+
+        // Demo Data
+        const demoEntries = [
+            {
+                id: 1,
+                title: "Production DB Connection Timeout",
+                status: "fixed",
+                tags: ["postgres", "aws", "critical"],
+                date: "2 hours ago",
+                body: `
+## Symptom
+Application started throwing 500 errors. Logs showed \`OperationalError: remaining connection slots are reserved for non-replication superuser connections\`.
+
+## Root Cause
+A new microservice was not closing connections properly, exhausting the RDS connection pool.
+
+## Fix
+Implemented connection pooling with PgBouncer and fixed the connection leak in the service.
+
+## Lesson
+Always monitor active connections when deploying new services that talk to the DB.
+                `
+            },
+            {
+                id: 2,
+                title: "React Hydration Error on Navbar",
+                status: "open",
+                tags: ["frontend", "nextjs", "react"],
+                date: "Yesterday",
+                body: `
+## Symptom
+Console warning: \`Text content does not match server-rendered HTML\`. Navbar flashes on load.
+
+## Root Cause
+Using \`window.localStorage\` to set a theme class during initial render, which differs from server render (undefined).
+
+## Fix
+Moved theme initialization to a \`useEffect\` hook to run only on client.
+
+## Lesson
+Never access browser APIs during standard React render phase in Next.js.
+                `
+            },
+            {
+                id: 3,
+                title: "CORS Issue on Staging API",
+                status: "fixed",
+                tags: ["api", "cors", "config"],
+                date: "3 days ago",
+                body: `
+## Symptom
+Frontend requests blocked by CORS policy.
+
+## Root Cause
+Nginx config on staging was missing the \`Access-Control-Allow-Origin\` header for the new frontend domain.
+
+## Fix
+Updated Nginx conf to allow the Vercel preview URL pattern.
+
+## Lesson
+Staging environments need to mimic production security constraints.
+                `
+            },
+            {
+                id: 4,
+                title: "Python Circular Import",
+                status: "fixed",
+                tags: ["python", "refactor"],
+                date: "Last week",
+                body: `
+## Symptom
+\`ImportError: cannot import name 'UserService' from partially initialized module 'services'\`.
+
+## Root Cause
+\`UserService\` imported \`AuthService\`, which imported \`UserService\` for type hinting.
+
+## Fix
+Used \`TYPE_CHECKING\` block for the type hint import to break the runtime cycle.
+
+## Lesson
+Be careful with tight coupling between services.
+                `
+            },
+            {
+                id: 5,
+                title: "Docker Build Failing on CI",
+                status: "fixed",
+                tags: ["devops", "docker"],
+                date: "2 weeks ago",
+                body: `
+## Symptom
+CI pipeline fails at \`RUN pip install -r requirements.txt\`.
+
+## Root Cause
+PyPi was temporarily down/slow, causing a timeout.
+
+## Fix
+Added retry logic and increased timeout in the pip command.
+
+## Lesson
+External dependencies will fail. Build resilience into pipelines.
+                `
+            }
+        ];
+
+        function renderEntries(entries) {
+            const listEl = document.querySelector('.journal-list');
+            listEl.innerHTML = '';
+            entries.forEach(entry => {
+                const statusColor = entry.status === 'fixed' ? 'status-fixed' : 'status-open';
+                const statusIcon = entry.status === 'fixed'
+                    ? '<svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" fill="currentColor" class="status-fixed"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"></path></svg>'
+                    : '<svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" fill="currentColor" class="status-open"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path></svg>';
+
+                const tagsHtml = entry.tags ? entry.tags.map(t => `<span class="tag">#${t}</span>`).join('') : '';
+
+                const li = document.createElement('li');
+                li.className = 'journal-item';
+                li.innerHTML = `
+                    <div class="status-icon">${statusIcon}</div>
+                    <div class="entry-main">
+                        <span class="entry-title">${entry.title}</span>
+                        <div class="entry-meta">
+                            <span>#${entry.id} opened ${entry.date}</span>
+                            ${tagsHtml}
+                        </div>
+                    </div>
+                `;
+                li.addEventListener('click', () => openModal(entry));
+                listEl.appendChild(li);
+            });
+        }
+
+        // Init with Demo Data
+        renderEntries(demoEntries);
+
+        // Modal Logic
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'modal-overlay';
+        modalOverlay.id = 'entry-drawer';
+        modalOverlay.innerHTML = `
+            <div class="modal-content">
+                <button class="close-modal">&times;</button>
+                <div class="modal-header">
+                    <h3 class="modal-title"></h3>
+                    <span class="modal-status-badge"></span>
+                </div>
+                <div class="modal-body"></div>
+            </div>
+        `;
+        document.body.appendChild(modalOverlay);
+
+        const closeBtn = modalOverlay.querySelector('.close-modal');
+        const modalTitle = modalOverlay.querySelector('.modal-title');
+        const modalBadge = modalOverlay.querySelector('.modal-status-badge');
+        const modalBody = modalOverlay.querySelector('.modal-body');
+
+        function openModal(entry) {
+            modalTitle.textContent = entry.title;
+            modalBadge.textContent = entry.status === 'fixed' ? 'Fixed' : 'Open';
+            modalBadge.className = `modal-status-badge ${entry.status === 'fixed' ? 'badge-fixed' : 'badge-open'}`;
+
+            // Allow string body (demo) or complex body
+            const bodyContent = entry.body || '*No content provided*';
+
+            // Simple markdown-ish parser for demo
+            const parsedBody = bodyContent
+                .split('\n')
+                .map(line => {
+                    const l = line.trim();
+                    if (l.startsWith('## ')) return `<h2>${l.substring(3)}</h2>`;
+                    if (l.startsWith('# ')) return `<h1>${l.substring(2)}</h1>`;
+                    if (l === '') return '';
+                    if (l.startsWith('`') && l.endsWith('`')) return `<p><code>${l.substring(1, l.length - 1)}</code></p>`;
+                    return `<p>${l}</p>`;
+                })
+                .join('');
+
+            modalBody.innerHTML = parsedBody;
+            modalOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        closeBtn.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) closeModal();
+        });
+
+        // Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+                closeModal();
+            }
+        });
+
+    </script>
+</body>
+
+</html>

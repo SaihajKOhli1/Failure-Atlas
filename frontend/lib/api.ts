@@ -2,13 +2,13 @@
  * API utility functions for calling FastAPI backend directly
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://127.0.0.1:8000';
 
 /**
- * Get user ID from localStorage or generate a new one
+ * Get user ID from localStorage or create one via API
  * Returns null if running during SSR
  */
-function getUserId(): string | null {
+async function ensureUserId(): Promise<string | null> {
   // Skip during SSR
   if (typeof window === 'undefined') {
     return null;
@@ -16,10 +16,35 @@ function getUserId(): string | null {
   
   let userId = localStorage.getItem('fa_user_id');
   if (!userId) {
-    userId = crypto.randomUUID();
-    localStorage.setItem('fa_user_id', userId);
+    // Create anonymous user via API
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/anon`, {
+        method: 'POST',
+        cache: 'no-store',
+      });
+      
+      if (response.ok) {
+        const data: AuthResponse = await response.json();
+        userId = data.user_id;
+        localStorage.setItem('fa_user_id', userId);
+      }
+    } catch (error) {
+      console.error('Failed to create anonymous user:', error);
+      return null;
+    }
   }
   return userId;
+}
+
+/**
+ * Get user ID from localStorage (synchronous, may return null)
+ * Returns null if running during SSR or if not set
+ */
+function getUserId(): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  return localStorage.getItem('fa_user_id');
 }
 
 // Helper function to parse error response and throw a nice error
@@ -51,35 +76,12 @@ async function handleErrorResponse(response: Response): Promise<never> {
 /**
  * Ensure anonymous user exists (creates if needed)
  * Client-side only
- * @deprecated Use getUserId() instead - this function is kept for backward compatibility
  */
 export async function ensureAnonUser(): Promise<string> {
-  // Only run on client-side
-  if (typeof window === 'undefined') {
-    throw new Error('ensureAnonUser() can only be called client-side');
-  }
-  
-  // Check if we already have a user ID
-  let userId = localStorage.getItem('fa_user_id');
-  
+  const userId = await ensureUserId();
   if (!userId) {
-    // Create new anonymous user
-    const response = await fetch(`${API_BASE_URL}/auth/anon`, {
-      method: 'POST',
-      cache: 'no-store',
-    });
-    
-    if (!response.ok) {
-      await handleErrorResponse(response);
-    }
-    
-    const data: AuthResponse = await response.json();
-    userId = data.user_id;
-    
-    // Store user ID in localStorage
-    localStorage.setItem('fa_user_id', userId);
+    throw new Error('Failed to get or create user ID');
   }
-  
   return userId;
 }
 
@@ -98,6 +100,44 @@ export interface Post {
   user_vote?: number; // -1, 0, or 1
   saved?: boolean;
   comment_count?: number;
+}
+
+export interface PostDetail {
+  id: number;
+  votes: number;
+  title: string;
+  product: string;
+  year: number;
+  category: string;
+  cause: string;
+  severity: string;
+  tags: string[];
+  summary: string;
+  body?: string | null;
+  status?: string | null;
+  created_at?: string;
+  user_vote?: number;
+  saved?: boolean;
+  comment_count?: number;
+}
+
+export interface Repo {
+  id: string;
+  owner_id: string;
+  name: string;
+  visibility: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReposResponse {
+  items: Repo[];
+  total: number;
+}
+
+export interface RepoIn {
+  name: string;
+  visibility?: string;
 }
 
 export interface Comment {
@@ -375,3 +415,6 @@ export async function fetchSaved(): Promise<PostsResponse> {
   return response.json();
 }
 
+
+// Export repo and detail functions
+export * from './api-repos';
